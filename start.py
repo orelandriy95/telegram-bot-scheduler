@@ -1,62 +1,80 @@
-import os
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import os
+import json
+import datetime
+from datetime import datetime as dt
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
+                          CommandHandler, ContextTypes, MessageHandler, filters)
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# Ініціалізація Google Sheets
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-client = gspread.authorize(creds)
-sheet = client.open_by_key(os.environ["GOOGLE_SHEET_ID"]).sheet1
-
-# Telegram токен
-TOKEN = os.environ["BOT_TOKEN"]
-
-# Логування
+# Налаштування логування
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Авторизація до Google Sheets
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds_dict = json.loads(os.getenv("SERVICE_ACCOUNT_JSON"))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+client = gspread.authorize(creds)
+sheet = client.open_by_key(os.getenv("GOOGLE_SHEET_ID")).sheet1
+
+# Обробник стартової команди
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("Записатись", callback_data="register")],
+        [InlineKeyboardButton("Записатись", callback_data="choose_date")],
         [InlineKeyboardButton("Мої записи", callback_data="my_bookings")]
     ]
-    await update.message.reply_text("Привіт! Обери дію:", reply_markup=InlineKeyboardMarkup(keyboard))
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Вітаю! Оберіть дію:", reply_markup=reply_markup)
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Обробник натискання кнопок
+async def button(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
 
-    if query.data == "register":
-        await query.edit_message_text("⏰ Обери час (лише парні години з 8:00 до 18:00):")
-        hours = [str(h) + ":00" for h in range(8, 20, 2)]
-        buttons = [[InlineKeyboardButton(hour, callback_data=f"book:{hour}")] for hour in hours]
-        await query.message.reply_text("Доступні години:", reply_markup=InlineKeyboardMarkup(buttons))
+    if query.data == "choose_date":
+        days = [(dt.now() + datetime.timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+        keyboard = [[InlineKeyboardButton(day, callback_data=f"day_{day}")] for day in days]
+        await query.message.reply_text("Оберіть дату:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif query.data.startswith("book:"):
-        hour = query.data.split(":")[1]
-        user = query.from_user
-        sheet.append_row([user.full_name, hour])
-        await query.message.reply_text(f"✅ Записано: {user.full_name} на {hour}")
-    
+    elif query.data.startswith("day_"):
+        date = query.data.split("_")[1]
+        hours = [f"{h:02}:00" for h in range(8, 20, 2)]
+        records = sheet.get_all_records()
+        booked_hours = [r["Час"] for r in records if r["Дата"] == date]
+        free_hours = [h for h in hours if h not in booked_hours]
+        keyboard = [[InlineKeyboardButton(hour, callback_data=f"book_{date}_{hour}")] for hour in free_hours]
+        keyboard.append([InlineKeyboardButton("Назад", callback_data="choose_date")])
+        await query.message.reply_text(f"Оберіть годину для {date}:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif query.data.startswith("book_"):
+        _, date, hour = query.data.split("_")
+        user = query.from_user.full_name
+        sheet.append_row([user, date, hour])
+        await query.message.reply_text(f"✅ Записано: {user}, {date} на {hour}")
+
     elif query.data == "my_bookings":
         user = query.from_user.full_name
         records = sheet.get_all_records()
-        user_records = [
-            f"{r['Прізвище Ім\'я']} — {r['Час']}"
-            for r in records
-            if r.get("Прізвище Ім'я") == user
-        ]
-    msg = "📋 Твої записи:\n" + "\n".join(user_records) if user_records else "ℹ️ У вас немає записів."
-    await query.message.reply_text(msg)
+        user_records = []
+        for r in records:
+            if r.get("Прізвище Ім'я") == user:
+                name = r["Прізвище Ім'я"]
+                time = r["Час"]
+                user_records.append(f"{name} — {time}")
 
+        msg = "📋 Твої записи:\n" + "\n".join(user_records) if user_records else "ℹ️ У вас немає записів."
+        await query.message.reply_text(msg)
 
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.run_polling()
-
+# Головна функція запуску
 if __name__ == "__main__":
-    main()
+    TOKEN = os.getenv("BOT_TOKEN")
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
+
+    logger.info("Бот запущено")
+    app.run_polling()
