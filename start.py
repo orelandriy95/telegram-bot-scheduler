@@ -17,12 +17,18 @@ from oauth2client.service_account import ServiceAccountCredentials
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Авторизація до Google Sheets
+# Авторизація через змінну SERVICE_ACCOUNT_JSON
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-client = gspread.authorize(creds)
-sheet = client.open_by_key("1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I").sheet1
+service_account_json = os.getenv("SERVICE_ACCOUNT_JSON")
 
+# Розпарсимо JSON-рядок
+creds_dict = json.loads(service_account_json)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+client = gspread.authorize(creds)
+
+# Підключення до Google Sheet
+spreadsheet_id = os.getenv("GOOGLE_SHEET_ID")
+sheet = client.open_by_key(spreadsheet_id).sheet1
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
