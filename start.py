@@ -25,11 +25,14 @@ import gspread
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Отримати JSON як рядок з змінної оточення
-creds_json = os.getenv("SERVICE_ACCOUNT_JSON")
+# Отримати JSON як рядок з Railway
+creds_raw = os.getenv("SERVICE_ACCOUNT_JSON")
 
-# Розпарсити його у словник
-creds_dict = json.loads(creds_json)
+# Розекранувати newlines
+creds_fixed = creds_raw.replace('\\n', '\n')
+
+# Розпарсити
+creds_dict = json.loads(creds_fixed)
 
 # Авторизація
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
