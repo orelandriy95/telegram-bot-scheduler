@@ -2,7 +2,7 @@
   "build": {
     "env": {
       "BOT_TOKEN": "",
-      "GOOGLE_SHEET_ID": ""
+      "GOOGLE_SHEET_ID": "1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I"
     }
   },
   "start": "python3 start.py"
