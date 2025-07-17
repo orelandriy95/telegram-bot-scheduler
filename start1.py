@@ -1,20 +1,20 @@
-import logging
 import os
-import datetime
-from datetime import datetime as dt
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
-                          CommandHandler, ContextTypes, MessageHandler, filters)
+import json
+import base64
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# Налаштування логування
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Завантаження та декодування JSON з base64
+encoded_creds = os.getenv("SERVICE_ACCOUNT_B64")
+if not encoded_creds:
+    raise ValueError("❌ SERVICE_ACCOUNT_B64 not found in environment variables")
 
-# Авторизація до Google Sheets через credentials.json
+creds_json = base64.b64decode(encoded_creds).decode("utf-8")
+creds_dict = json.loads(creds_json)
+
+# Авторизація до Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 #sheet = client.open_by_key(os.getenv('1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I')).sheet1
 sheet = client.open_by_key("1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I").sheet1
