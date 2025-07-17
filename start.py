@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Авторизація до Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_dict = json.loads(os.getenv("SERVICE_ACCOUNT_JSON"))
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open_by_key(os.environ["GOOGLE_SHEET_ID"]).sheet1
 
