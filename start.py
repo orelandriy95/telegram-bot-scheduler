@@ -6,19 +6,14 @@ import gspread
 # Скопіюй цей scope
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Отримай значення з Railway
+# ОТРИМУЄМО І РОЗПАРСЮЄМО ЗМІННУ З Railway
 creds_raw = os.getenv("SERVICE_ACCOUNT_JSON")
 
-# Перевірка: якщо None — виведи помилку
-if creds_raw is None:
-    raise ValueError("Змінна SERVICE_ACCOUNT_JSON не задана в Railway!")
+# ЗАМІНЮЄМО \\n НА СПРАВЖНІ \n
+creds_fixed = creds_raw.replace("\\n", "\n")
 
-# Фіксація символів переносу рядка
-try:
-    creds_fixed = creds_raw.replace('\\n', '\n')
-    creds_dict = json.loads(creds_fixed)
-except json.JSONDecodeError as e:
-    raise ValueError(f"❌ JSON неправильний або пошкоджений: {e}")
+# ПАРСИМО У JSON
+creds_dict = json.loads(creds_fixed)
 
 # Авторизація
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
