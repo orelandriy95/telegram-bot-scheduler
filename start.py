@@ -43,7 +43,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "my_bookings":
         user = query.from_user.full_name
         records = sheet.get_all_records()
-        user_records = [f"{r[\"Прізвище Ім'я\"]} — {r['Час']}" for r in records if r[\"Прізвище Ім'я\"] == user]
+        user_records = []
+            for r in records:
+                if r["Прізвище Ім'я"] == user:
+                    user_records.append(f"{r['Прізвище Ім\'я']} — {r['Час']}")    
         msg = "\n".join(user_records) if user_records else "Немає записів"
         await query.message.reply_text(f"📋 Твої записи:\n{msg}")
 
