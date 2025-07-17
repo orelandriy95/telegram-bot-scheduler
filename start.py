@@ -1,38 +1,24 @@
-
-import os
-import json
-import logging
-import datetime
-from datetime import datetime as dt, timedelta
-from telegram import (
-    Update, InlineKeyboardMarkup, InlineKeyboardButton
-)
-from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, ContextTypes
-)
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-# Логування
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Авторизація через змінну SERVICE_ACCOUNT_JSON
 import os
 import json
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
+# Скопіюй цей scope
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Отримати JSON як рядок з Railway
+# Отримай значення з Railway
 creds_raw = os.getenv("SERVICE_ACCOUNT_JSON")
 
-# Розекранувати newlines
-creds_fixed = creds_raw.replace('\\n', '\n')
+# Перевірка: якщо None — виведи помилку
+if creds_raw is None:
+    raise ValueError("Змінна SERVICE_ACCOUNT_JSON не задана в Railway!")
 
-# Розпарсити
-creds_dict = json.loads(creds_fixed)
+# Фіксація символів переносу рядка
+try:
+    creds_fixed = creds_raw.replace('\\n', '\n')
+    creds_dict = json.loads(creds_fixed)
+except json.JSONDecodeError as e:
+    raise ValueError(f"❌ JSON неправильний або пошкоджений: {e}")
 
 # Авторизація
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
