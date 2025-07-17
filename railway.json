@@ -1,0 +1,9 @@
+{
+  "build": {
+    "env": {
+      "BOT_TOKEN": "",
+      "GOOGLE_SHEET_ID": ""
+    }
+  },
+  "start": "python3 start.py"
+}
