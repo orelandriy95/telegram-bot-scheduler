@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open_by_key(os.getenv('1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I')).sheet1
+#sheet = client.open_by_key(os.getenv('1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I')).sheet1
+sheet = client.open_by_key("1Ug6Mze38Jr6uVLv9Tm74t2j42PkCFplELt7qjPFCg7I").sheet1
 
 # Обробник стартової команди
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
