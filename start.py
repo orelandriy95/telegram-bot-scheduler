@@ -41,13 +41,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(f"✅ Записано: {user.full_name} на {hour}")
     
     elif query.data == "my_bookings":
-    user = query.from_user.full_name
-    records = sheet.get_all_records()
-    user_records = [
-        f"{r['Прізвище Ім\'я']} — {r['Час']}"
-        for r in records
-        if r.get("Прізвище Ім'я") == user
-    ]
+        user = query.from_user.full_name
+        records = sheet.get_all_records()
+        user_records = [
+            f"{r['Прізвище Ім\'я']} — {r['Час']}"
+            for r in records
+            if r.get("Прізвище Ім'я") == user
+        ]
     msg = "📋 Твої записи:\n" + "\n".join(user_records) if user_records else "ℹ️ У вас немає записів."
     await query.message.reply_text(msg)
 
