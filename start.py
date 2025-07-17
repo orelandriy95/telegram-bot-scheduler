@@ -1,6 +1,5 @@
 import logging
 import os
-import json
 import datetime
 from datetime import datetime as dt
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -13,10 +12,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Авторизація до Google Sheets
+# Авторизація до Google Sheets через credentials.json
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_dict = json.loads(os.getenv("SERVICE_ACCOUNT_JSON"))
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open_by_key(os.getenv("GOOGLE_SHEET_ID")).sheet1
 
@@ -43,7 +41,7 @@ async def button(update: Update, context: CallbackContext):
         date = query.data.split("_")[1]
         hours = [f"{h:02}:00" for h in range(8, 20, 2)]
         records = sheet.get_all_records()
-        booked_hours = [r["Час"] for r in records if r["Дата"] == date]
+        booked_hours = [r["Час"] for r in records if r.get("Дата") == date]
         free_hours = [h for h in hours if h not in booked_hours]
         keyboard = [[InlineKeyboardButton(hour, callback_data=f"book_{date}_{hour}")] for hour in free_hours]
         keyboard.append([InlineKeyboardButton("Назад", callback_data="choose_date")])
@@ -61,11 +59,15 @@ async def button(update: Update, context: CallbackContext):
         user_records = []
         for r in records:
             if r.get("Прізвище Ім'я") == user:
-                name = r["Прізвище Ім'я"]
-                time = r["Час"]
+                name = r.get("Прізвище Ім'я", "")
+                time = r.get("Час", "")
                 user_records.append(f"{name} — {time}")
 
-        msg = "📋 Твої записи:\n" + "\n".join(user_records) if user_records else "ℹ️ У вас немає записів."
+        if user_records:
+            msg = "📋 Твої записи:\n" + "\n".join(user_records)
+        else:
+            msg = "ℹ️ У вас немає записів."
+
         await query.message.reply_text(msg)
 
 # Головна функція запуску
