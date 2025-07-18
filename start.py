@@ -4,7 +4,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 print('-----------++++--------------')
 
-gc = gspread.service_account(vos.environ.get('SERVICE_ACCOUNT_JSON'))
+gc = gspread.service_account(os.environ.get('SERVICE_ACCOUNT_JSON'))
 
 # Open a sheet from a spreadsheet in one go
 wks = gc.open("Schedule").sheet1
