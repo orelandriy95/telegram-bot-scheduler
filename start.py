@@ -3,7 +3,7 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 print('-----------++++--------------')
-
+print(os.getenv("GOOGLE_SHEET_ID"))
 gc = gspread.service_account(os.getenv('SERVICE_ACCOUNT_JSON'))
 
 # Open a sheet from a spreadsheet in one go
